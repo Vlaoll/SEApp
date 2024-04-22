@@ -8,7 +8,7 @@
         
         mc:Ignorable="d"
         Height="450" Width="700" Background="#FFEAEBEC"
-        Title="SE TIA portal - constructor (V0.3.1.1)"    WindowStartupLocation="CenterScreen"  >
+        Title="SE TIA portal - constructor (V0.3.2)"    WindowStartupLocation="CenterScreen"  >
 
     <Window.Resources>
         <Style x:Key="TIAAppStyle" TargetType="ContentControl">
