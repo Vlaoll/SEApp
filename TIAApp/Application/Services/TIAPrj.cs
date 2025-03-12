@@ -20,9 +20,9 @@ using Siemens.Engineering.Library.Types;
 using Siemens.Engineering.SW.Tags;
 using Siemens.Engineering.Library.MasterCopies;
 using System.Windows.Documents;
+using seConfSW.Domain.Models;
 
-
-namespace TIAApp
+namespace seConfSW
 {
     public class TIAPrj
     {
@@ -151,7 +151,7 @@ namespace TIAApp
 
 
 
-        public string SearchProject(string filter = "TIA Portal v18 |*.ap18")
+        public string SearchProject(string filter = "TIA Portal v19 |*.ap19")
         {
             OpenFileDialog fileSearch = new OpenFileDialog();
             
@@ -179,7 +179,7 @@ namespace TIAApp
             }
             return ProjectPath;
         }
-        public string SearchLibrary(string filter = "TIA Library v18 |*.al18")
+        public string SearchLibrary(string filter = "TIA Library v19 |*.al19")
         {
             OpenFileDialog fileSearch = new OpenFileDialog();
 

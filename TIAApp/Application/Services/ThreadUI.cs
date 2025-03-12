@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 
 
-namespace TIAApp
+namespace seConfSW
 {
     public class ThreadUI : DispatcherObject
     {

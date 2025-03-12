@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TIAApp.ViewModels
-{    
-    public class TIAViewModel
+namespace seConfSW.ViewModels
+{
+    public class ExcelViewModel
     {
-        public string Title { get; } = "TIA";
+        public string Title { get; } = "Excel";
     }
 }

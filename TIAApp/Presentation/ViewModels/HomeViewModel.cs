@@ -11,9 +11,9 @@ using System.Text;
 using System.Windows;
 
 using System.Data;
-using TIAApp.Views;
+using seConfSW.Views;
 
-namespace TIAApp.ViewModels
+namespace seConfSW.ViewModels
 {
     public class HomeViewModel
     {

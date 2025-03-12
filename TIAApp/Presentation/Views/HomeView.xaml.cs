@@ -12,19 +12,21 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shapes;
 using Excel = Microsoft.Office.Interop.Excel;
+using seConfSW.Domain.Models;
+using Microsoft.Extensions.Configuration;
 
-namespace TIAApp.Views
+namespace seConfSW.Views
 {
     /// <summary>
     /// Interaction logic for HomeView.xaml
     /// </summary>
     public partial class HomeView : UserControl
     {
-
+        private readonly IConfiguration configuration;
         public string Title { get; } = "Home";
         public static ThreadUI _dispatcher = new ThreadUI();
         private TIAPrj _tiaprj;
-        private ExcelPrj _excelprj;
+        private ExcelDataReader _excelprj;
         private string msg = string.Empty;
         private string sourceDBPath = @"Samples\sourceDB\";
         private string exportPath = @"Samples\export\";
@@ -44,7 +46,7 @@ namespace TIAApp.Views
         public HomeView()
         {
             InitializeComponent();
-            if (DateTime.Now > new DateTime(2024, 06, 30, 23, 59, 59))
+            if (DateTime.Now > new DateTime(2025, 06, 30, 23, 59, 59))
             {
                 btnCheckPermission.IsEnabled = false;
             }
@@ -52,6 +54,7 @@ namespace TIAApp.Views
             {
                 btnCheckPermission.IsEnabled = true;
             }
+            this.configuration = App.Configuration;
         }
         private bool CreateExcelDB()
         {
@@ -63,26 +66,27 @@ namespace TIAApp.Views
                 Trace.WriteLine(msg);
 
                 _excelprj = null;
-                _excelprj = new ExcelPrj();
+                _excelprj = new ExcelDataReader();
                 msg = "[General]" + "##############################################################################################";
                 Trace.WriteLine(msg);
                 if (string.IsNullOrEmpty(excelPath))
                 {
-                    excelPath = _excelprj.SearchProject();
-                }
-                else
-                {
-                    _excelprj.OpenExcelFile(excelPath);
+                    var filter = configuration["Excel:Filter"] ?? "Excel |*.xlsx;*.xlsm";
+                    excelPath = _excelprj.SearchProject(filter: filter);
                 }
 
-                if (!_excelprj.ReadExcelData("Block"))
+                var mainSheetName = configuration["Excel:MainSheetName"] ?? "Main";
+                _excelprj.OpenExcelFile(excelPath, mainSheetName: mainSheetName);
+               
+
+                if (!_excelprj.ReadExcelObjectData("Block",250))
                 {
                     temp = DateTime.Now;
                     msg = temp + " :[General:Error] Wrong settings in excel file";
                     Trace.WriteLine(msg);
                     return false;
                 }
-                if (!_excelprj.CreateFCList())
+                if (!_excelprj.ReadExcelExtendedData())
                 {
                     temp = DateTime.Now;
                     msg = temp + " :[General:Error] Wrong settings in excel file";
@@ -1217,10 +1221,10 @@ namespace TIAApp.Views
             }
 
             //check TIA Portal version
-            RegistryKey filePathReg = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Siemens\\Automation\\Openness\\18.0\\PublicAPI\\18.0.0.0");
+            RegistryKey filePathReg = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Siemens\\Automation\\Openness\\19.0\\PublicAPI\\19.0.0.0");
             if (filePathReg == null)
             {
-                msg = "Missing or Incorrect version ofTIA Portal. Must be TIA Portal v18";
+                msg = "Missing or Incorrect version ofTIA Portal. Must be TIA Portal v19";
                 tbMessage.Text = msg;
                 return;
             }
