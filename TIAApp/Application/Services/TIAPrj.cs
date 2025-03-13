@@ -19,7 +19,6 @@ using Siemens.Engineering.Library;
 using Siemens.Engineering.Library.Types;
 using Siemens.Engineering.SW.Tags;
 using Siemens.Engineering.Library.MasterCopies;
-using System.Windows.Documents;
 using seConfSW.Domain.Models;
 
 namespace seConfSW

@@ -1,61 +1,45 @@
-﻿using System;
-using System.Windows;
-using Serilog;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using seConfSW.Presentation.ViewModels;
+using seConfSW.Presentation.Views;
+using seConfSW.Services;
+using System;
+using System.IO;
+using System.Windows;
 
 namespace seConfSW
 {
     public partial class App : Application
     {
-        private ServiceProvider _serviceProvider;
+        private readonly IServiceProvider _serviceProvider;
         public static IConfiguration Configuration { get; private set; }
+
+        public App()
+        {
+            var serviceCollection = new ServiceCollection();
+            ConfigureServices(serviceCollection);
+            _serviceProvider = serviceCollection.BuildServiceProvider();
+        }
+
+        private void ConfigureServices(IServiceCollection services)
+        {
+            Configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+            services.AddSingleton<IConfiguration>(Configuration);
+
+            services.AddSingleton<ExcelService>();
+            services.AddSingleton<TiaService>();
+            services.AddTransient<MainWindowViewModel>();
+            services.AddTransient<MainWindow>();
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            // Настройка конфигурации
-            Configuration = new ConfigurationBuilder()
-                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .Build();
-
-            // Настройка Serilog
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.Console()
-                .WriteTo.File("logs/log-.txt",
-                    rollingInterval: RollingInterval.Day,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                .CreateLogger();
-
-            // Настройка DI
-            var services = new ServiceCollection();
-            //services.AddSingleton<IConfiguration>(configuration);
-            services.AddSingleton<ILogger>(Log.Logger);
-
-            
-
-
-            _serviceProvider = services.BuildServiceProvider();
-
-            try
-            {
-                Log.Information("Application started successfully.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error during application startup.");
-                Shutdown(1);
-            }
-        }
-
-        protected override void OnExit(ExitEventArgs e)
-        {
-            Log.Information("Application is shutting down.");
-            Log.CloseAndFlush();
-            base.OnExit(e);
+            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            mainWindow.Show();
         }
     }
 }
