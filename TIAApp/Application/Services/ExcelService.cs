@@ -1,98 +1,142 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿// Ignore Spelling: plc Conf Eq Prj excelprj
+
+using seConfSW.Domain.Models;
+using Serilog;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace seConfSW.Services
 {
-    public class ExcelService
+    /// <summary>
+    /// Service for handling Excel file operations including reading, processing, and managing Excel-based data.
+    /// Provides functionality to create an Excel database, retrieve data, and manage file operations.
+    /// </summary>
+    public class ExcelService : IExcelService
     {
-        private readonly IConfiguration _configuration;
-        private ExcelDataReader _excelprj;
-        private string _excelPath;
-        private string _msg = string.Empty;
+        #region Constants
 
-        public ExcelService(IConfiguration configuration)
+        /// <summary>
+        /// Prefix used for logging messages from this service
+        /// </summary>
+        private const string LogPrefix = "[Excel]";
+
+        #endregion
+        #region Fields
+
+        private readonly ILogger _logger;
+        private readonly IConfigurationService _configuration;
+        private readonly IExcelDataReader _excelprj;
+        private string _excelPath;
+
+        #endregion
+        #region Events
+
+        /// <summary>
+        /// Event that is triggered when a message needs to be updated
+        /// </summary>
+        public event EventHandler<string> MessageUpdated;
+
+        #endregion
+        #region Properties
+
+        /// <summary>
+        /// Gets the data reader instance for accessing Excel data
+        /// </summary>
+        public IExcelDataReader DataReader => _excelprj;
+
+        #endregion
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the ExcelService class with required dependencies
+        /// </summary>
+        /// <param name="logger">Logger instance for logging messages</param>
+        /// <param name="configuration">Configuration service instance</param>
+        /// <param name="excelprj">Excel data reader instance</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null</exception>
+        public ExcelService(ILogger logger, IConfigurationService configuration, IExcelDataReader excelprj)
         {
-            _configuration = configuration;
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _excelprj = excelprj ?? throw new ArgumentNullException(nameof(excelprj));
         }
 
-        public bool CreateExcelDB(out string message)
+        #endregion
+        #region Public Methods
+
+        /// <inheritdoc />
+        public bool CreateExcelDB()
         {
-            message = _msg;
             try
             {
-                DateTime temp = DateTime.Now;
-                message = temp + " :[General]Start to genetate excel DB";
-                Trace.WriteLine(message);
+                _logger.Information($"{LogPrefix} Starting generation of Excel database");
+                _logger.Information($"{LogPrefix} -------------------------------------------------------------------------------------");
 
-                _excelprj = null;
-                _excelprj = new ExcelDataReader();
-                message = "[General]" + "##############################################################################################";
-                Trace.WriteLine(message);
                 if (string.IsNullOrEmpty(_excelPath))
                 {
-                    var filter = _configuration["Excel:Filter"] ?? "Excel |*.xlsx;*.xlsm";
+                    var filter = _configuration.ExcelFilter;
+                    _logger.Information($"{LogPrefix} Searching for Excel project file");
                     _excelPath = _excelprj.SearchProject(filter: filter);
+                    _logger.Information($"{LogPrefix} Selected Excel file path: {_excelPath}");
                 }
 
-                var mainSheetName = _configuration["Excel:MainSheetName"] ?? "Main";
+                var mainSheetName = _configuration.MainExcelSheetName;
+                _logger.Information($"{LogPrefix} Opening Excel file {_excelPath} with main sheet: {mainSheetName}");
                 _excelprj.OpenExcelFile(_excelPath, mainSheetName: mainSheetName);
 
+                _logger.Information($"{LogPrefix} Reading object data from Excel file");
                 if (!_excelprj.ReadExcelObjectData("Block", 250))
                 {
-                    temp = DateTime.Now;
-                    message = temp + " :[General:Error] Wrong settings in excel file";
-                    Trace.WriteLine(message);
+                    _logger.Error($"{LogPrefix} Failed to read object data from Excel file due to incorrect settings");
                     return false;
                 }
+
+                _logger.Information($"{LogPrefix} Reading extended data from Excel file");
                 if (!_excelprj.ReadExcelExtendedData())
                 {
-                    temp = DateTime.Now;
-                    message = temp + " :[General:Error] Wrong settings in excel file";
-                    Trace.WriteLine(message);
+                    _logger.Error($"{LogPrefix} Failed to read extended data from Excel file due to incorrect settings");
                     return false;
                 }
+
+                _logger.Information($"{LogPrefix} Closing Excel file");
                 _excelprj.CloseExcelFile();
+                _logger.Information($"{LogPrefix} Successfully generated Excel database from {_excelPath}");
+                _logger.Information($"{LogPrefix} -------------------------------------------------------------------------------------");
 
-                temp = DateTime.Now;
-                message = temp + " :[General]Finished to genetate excel DB";
-                Trace.WriteLine(message);
-                message = "[General]" + "##############################################################################################";
-                Trace.WriteLine(message);
-
-                _msg = message;
                 return true;
             }
             catch (Exception ex)
             {
-                message = "[General]" + ex.Message;
-                Trace.WriteLine(message);
-                _msg = message;
+                _logger.Error($"{LogPrefix} Failed to generate Excel database: {ex.Message}");
                 return false;
             }
         }
 
-        public ExcelDataReader GetExcelDataReader()
+        /// <inheritdoc />
+        public List<dataPLC> GetExcelDataReader()
         {
-            return _excelprj;
+            return _excelprj.BlocksStruct;
         }
 
+        /// <inheritdoc />
         public void CloseExcelFile()
         {
             try
             {
+                _logger.Information($"{LogPrefix} Closing Excel file");
                 _excelprj?.CloseExcelFile();
-                _excelprj = null;
+                _logger.Information($"{LogPrefix} Excel file closed");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Исключение игнорируется, как в исходном коде
+                _logger.Error($"{LogPrefix} Failed to close Excel file: {ex.Message}");
             }
         }
 
-        public string GetMessage()
-        {
-            return _msg;
-        }
+        #endregion
+        #region Private Helper Methods
+        // Currently no private helper methods exist in this class
+        // Future private methods should be placed in this region
+        #endregion
     }
 }

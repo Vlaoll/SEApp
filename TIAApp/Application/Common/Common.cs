@@ -8,21 +8,21 @@ namespace seConfSW
 {
     static class Common
     {
-        public static string ModifyString(string excString, List<excelData> excelData)
-        {
-            if (excelData.Count > 0)
-            {
-                foreach (var item in excelData)
-                {
-                    if (excString.Contains(item.name))
-                    {
-                        excString = excString.Replace(item.name, item.value).Trim();
-                    }
-                }
-            }
-            return excString;
-        }
-        public static string ModifyString(string excString, List<excelData> excelData, string preFix)
+        //public static string ModifyString(string excString, List<excelData> excelData)
+        //{
+        //    if (excelData.Count > 0)
+        //    {
+        //        foreach (var item in excelData)
+        //        {
+        //            if (excString.Contains(item.name))
+        //            {
+        //                excString = excString.Replace(item.name, item.value).Trim();
+        //            }
+        //        }
+        //    }
+        //    return excString;
+        //}
+        public static string ModifyString(string excString, List<excelData> excelData, string preFix = null)
         {
             if (excelData.Count > 0)
             {
@@ -54,7 +54,6 @@ namespace seConfSW
                 dict.Add(key, null);
             }
         }
-
         public static void CreateNewFolder(string path)
         {
             try

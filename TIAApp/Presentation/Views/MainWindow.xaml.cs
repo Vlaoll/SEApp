@@ -9,7 +9,7 @@ namespace seConfSW.Presentation.Views
         {
             InitializeComponent();
             DataContext = viewModel;
-            Closed += (s, e) => viewModel.CloseWindows(); // Вызов метода закрытия при закрытии окна
+            Closed += (s, e) => viewModel.CloseWindows();
         }
     }
 }

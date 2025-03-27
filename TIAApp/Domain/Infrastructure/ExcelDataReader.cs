@@ -19,7 +19,6 @@ namespace seConfSW
     {
         // Fields
         private string excelPath = string.Empty; // Path to the currently open Excel file
-        private string message = string.Empty; // Last message generated during processing
         private XLWorkbook workbook; // Workbook instance for the open Excel file
         private IXLWorksheet mainWorkSheet; // Main worksheet from the Excel file
         private List<IXLWorksheet> worksheets; // List of all worksheets in the Excel file
@@ -96,27 +95,26 @@ namespace seConfSW
             {"ExtFCValues", (6, 3)}
         };
 
-        // Properties
-        /// <summary>
-        /// Gets the last message generated during Excel processing, such as success or error details.
-        /// </summary>
-        public string Message => message;
-
+        // Properties    
         /// <summary>
         /// Gets the list of PLC data structures populated from Excel.
         /// </summary>
         public List<dataPLC> BlocksStruct => blocksStruct;
+
+        /// <summary>
+        /// Event raised when a progress message is generated during Excel processing.
+        /// </summary>
+        public event EventHandler<string> MessageUpdated;
 
         // Constructor
         /// <summary>
         /// Initializes a new instance of the <see cref="ExcelDataReader"/> class.
         /// </summary>
         /// <param name="logger">Optional logger instance. If null, a default logger is created.</param>
-        public ExcelDataReader(ILogger logger = null)
+        public ExcelDataReader(ILogger logger)
         {
-            _logger = logger ?? Log.ForContext<ExcelDataReader>(); // Initialize logger, use default if none provided
-            worksheets = new List<IXLWorksheet>(); // Initialize worksheet list
-            _logger.Information("ExcelDataReader initialized successfully."); // Log successful initialization
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger)); // Initialize logger
+            worksheets = new List<IXLWorksheet>(); // Initialize worksheet list           
         }
 
         // Public Methods
@@ -143,12 +141,10 @@ namespace seConfSW
             // Log file selection if a path is chosen
             if (!string.IsNullOrEmpty(projectPath))
             {
-                message = $"{LogPrefix} Opening excel file {projectPath}";
-                _logger.Information(message);
+                _logger.Information($"{LogPrefix} Opening excel file {projectPath}");
             }
             return projectPath;
         }
-
         /// <summary>
         /// Opens an Excel file and initializes worksheets for processing.
         /// </summary>
@@ -167,23 +163,19 @@ namespace seConfSW
                 // Check if main worksheet exists
                 if (mainWorkSheet == null)
                 {
-                    message = $"{LogPrefix} Main sheet '{mainSheetName}' not found in {excelPath}";
-                    _logger.Warning(message);
+                    _logger.Warning($"{LogPrefix} Main sheet '{mainSheetName}' not found in {excelPath}");
                     return false;
                 }
 
-                message = $"{LogPrefix} Master Excel {excelPath} is opened";
-                _logger.Information(message);
+                _logger.Information($"{LogPrefix} Master Excel {excelPath} is opened");
                 return true;
             }
             catch (Exception ex)
             {
-                message = $"{LogPrefix} Error while opening excel: {ex.Message}";
-                _logger.Error(ex, message);
+                _logger.Error($"{LogPrefix} Error while opening excel: {ex.Message}");
                 return false;
             }
         }
-
         /// <summary>
         /// Closes the currently open Excel file.
         /// </summary>
@@ -194,8 +186,7 @@ namespace seConfSW
             // Check if a workbook is open
             if (workbook == null)
             {
-                message = $"{LogPrefix} No open workbook to close";
-                _logger.Warning(message);
+                _logger.Warning($"{LogPrefix} No open workbook to close");
                 return false;
             }
 
@@ -204,18 +195,15 @@ namespace seConfSW
                 if (save) workbook.Save(); // Save changes if requested
                 workbook.Dispose(); // Release workbook resources
                 workbook = null; // Clear reference
-                message = $"{LogPrefix} Master Excel {excelPath} is closed";
-                _logger.Information(message);
+                _logger.Information($"{LogPrefix} Master Excel {excelPath} is closed");
                 return true;
             }
             catch (Exception ex)
             {
-                message = $"{LogPrefix} Error while closing excel: {ex.Message}";
-                _logger.Error(ex, message);
+                _logger.Error($"{LogPrefix} Error while closing excel: {ex.Message}");
                 return false;
             }
         }
-
         /// <summary>
         /// Reads and processes object data from the main worksheet based on a status filter.
         /// </summary>
@@ -227,8 +215,7 @@ namespace seConfSW
             // Validate main worksheet
             if (mainWorkSheet == null)
             {
-                message = $"{LogPrefix} Main worksheet is not initialized";
-                _logger.Error(message);
+                _logger.Warning($"{LogPrefix} Main worksheet is not initialized");
                 return false;
             }
 
@@ -261,20 +248,18 @@ namespace seConfSW
                     }
                     catch (Exception ex)
                     {
-                        message = $"{LogPrefix} Error processing row {row}: {ex.Message}";
-                        _logger.Error(ex, message);
+                        _logger.Error($"{LogPrefix} Error processing row {row}: {ex.Message}");
                     }
                 }
+                _logger.Information($"{LogPrefix} Finished reading object data");
                 return isAnySuccess;
             }
             catch (Exception ex)
             {
-                message = $"{LogPrefix} Critical error in excel data processing: {ex.Message}";
-                _logger.Error(ex, message);
+                _logger.Error($"{LogPrefix} Critical error in excel data processing: {ex.Message}");
                 return false;
             }
         }
-
         /// <summary>
         /// Reads and processes extended data from a specified worksheet (e.g., PLCData).
         /// </summary>
@@ -288,8 +273,7 @@ namespace seConfSW
                 IXLWorksheet tempSheet = worksheets.FirstOrDefault(ws => ws.Name == sheetBlockDataName);
                 if (tempSheet == null)
                 {
-                    message = $"{LogPrefix} Sheet '{sheetBlockDataName}' not found";
-                    _logger.Warning(message);
+                    _logger.Warning($"{LogPrefix} Sheet '{sheetBlockDataName}' not found");
                     return false;
                 }
 
@@ -299,12 +283,12 @@ namespace seConfSW
                 AddToExtendedDataUserConstants(tempSheet);
                 AddToExtendedDataFCValues(tempSheet);
 
+                _logger.Information($"{LogPrefix} Finished reading extended data");
                 return true;
             }
             catch (Exception ex)
             {
-                message = $"{LogPrefix} Error in excel data processing: {ex.Message}";
-                _logger.Error(ex, message);
+                _logger.Error($"{LogPrefix} Error in excel data processing: {ex.Message}");
                 return false;
             }
         }
@@ -333,12 +317,10 @@ namespace seConfSW
                     userConstant = new List<userConstant>()
                 };
                 blocksStruct.Add(plc);
-                message = $"{LogPrefix} Created structure for PLC: {plcName}";
-                _logger.Information(message);
+                _logger.Information($"{LogPrefix} Created structure for PLC: {plcName}");
             }
             return plc;
         }
-
         /// <summary>
         /// Retrieves the equipment worksheet based on the equipment type from a row.
         /// </summary>
@@ -355,8 +337,7 @@ namespace seConfSW
             // Handle case where worksheet is not found
             if (sheet == null)
             {
-                message = $"{LogPrefix} No sheet found for equipment type: {tempTypeEq}";
-                _logger.Warning(message);
+                _logger.Warning($"{LogPrefix} No sheet found for equipment type: {tempTypeEq}");
                 typeEq = tempTypeEq;
                 eqName = string.Empty;
                 return false;
@@ -366,7 +347,6 @@ namespace seConfSW
             eqName = sheet.Name;
             return true;
         }
-
         /// <summary>
         /// Processes equipment data for a PLC from its worksheet.
         /// </summary>
@@ -394,12 +374,10 @@ namespace seConfSW
                 dataDataBlockValue = new List<dataDataBlockValue>()
             };
             tempItem.Equipment.Add(tempEq);
-            message = $"{LogPrefix} Created structure for equipment type: {typeEq}";
-            _logger.Information(message);
+            _logger.Information($"{LogPrefix} Created structure for equipment type: {typeEq}");
 
             PopulateEquipmentData(sheet, tempEq); // Populate equipment data
         }
-
         /// <summary>
         /// Populates the equipment structure with data from its worksheet.
         /// </summary>
@@ -416,7 +394,6 @@ namespace seConfSW
             AddToEquipmentSupportBDs(sheet, tempEq);
             AddToEquipmentDataBlockValues(sheet, tempEq);
         }
-
         /// <summary>
         /// Adds function block libraries to the equipment structure.
         /// </summary>
@@ -432,7 +409,6 @@ namespace seConfSW
                 isType = sheet.Cell(r, fieldTypeFcColumns["isType"]).GetValue<string>().ToLower() == "yes"
             }), "Added Function Blocks (FB)");
         }
-
         /// <summary>
         /// Adds data tags to the equipment structure.
         /// </summary>
@@ -467,7 +443,6 @@ namespace seConfSW
                 tempEq.dataTag.Add(tag);
             }, "Added Data Tags");
         }
-
         /// <summary>
         /// Adds data parameters to the equipment structure.
         /// </summary>
@@ -482,7 +457,6 @@ namespace seConfSW
                 link = sheet.Cell(r, fieldTypeParameterColumns["link"]).GetValue<string>()
             }), "Added Data Parameters");
         }
-
         /// <summary>
         /// Adds extended support blocks to the equipment structure.
         /// </summary>
@@ -504,7 +478,6 @@ namespace seConfSW
                 tempEq.dataExtSupportBlock.Add(block);
             }, "Added Extended Support Blocks");
         }
-
         /// <summary>
         /// Adds constants to the equipment structure.
         /// </summary>
@@ -520,7 +493,6 @@ namespace seConfSW
                 table = sheet.Cell(r, fieldTypeConstantColumns["table"]).GetValue<string>()
             }), "Added Constants");
         }
-
         /// <summary>
         /// Adds support BDs to the equipment structure.
         /// </summary>
@@ -544,7 +516,6 @@ namespace seConfSW
                 });
             }, "Added Support BDs");
         }
-
         /// <summary>
         /// Adds data block values to the equipment structure.
         /// </summary>
@@ -559,7 +530,6 @@ namespace seConfSW
                 DB = sheet.Cell(r, fieldTypeDataBlockValueColumns["DB"]).GetValue<string>()
             }), "Added Data Block Values");
         }
-
         /// <summary>
         /// Adds full object data (instance) to the PLC structure.
         /// </summary>
@@ -590,8 +560,7 @@ namespace seConfSW
             string numberValue = mainWorkSheet.Cell(row, fieldMain["PLCNumber"]).GetValue<string>();
             if (!int.TryParse(numberValue, out int number))
             {
-                message = $"{LogPrefix} Failed to parse PLCNumber at row {row}, column {fieldMain["PLCNumber"]}: {numberValue}";
-                _logger.Warning(message);
+                _logger.Error($"{LogPrefix} Failed to parse PLCNumber at row {row}, column {fieldMain["PLCNumber"]}: {numberValue}");
                 return false;
             }
             instance.number = number;
@@ -616,11 +585,9 @@ namespace seConfSW
             }
 
             tempItem.instanceDB.Add(instance);
-            message = $"{LogPrefix} Created Instance for: {ex.FirstOrDefault(item => item.name == "EqName")?.value}";
-            _logger.Information(message);
+            _logger.Information($"{LogPrefix} Created Instance for: {ex.FirstOrDefault(item => item.name == "EqName")?.value}");
             return true;
         }
-
         /// <summary>
         /// Adds function data to the PLC structure from the extended data worksheet.
         /// </summary>
@@ -635,8 +602,7 @@ namespace seConfSW
                     string numberValue = sheet.Cell(row, fieldExtendedBlockData["Block Number"]).GetValue<string>();
                     if (!int.TryParse(numberValue, out int number))
                     {
-                        message = $"{LogPrefix} Failed to parse Block Number at row {row}: {numberValue}";
-                        _logger.Warning(message);
+                        _logger.Error($"{LogPrefix} Failed to parse Block Number at row {row}: {numberValue}");
                         return;
                     }
 
@@ -651,12 +617,10 @@ namespace seConfSW
                             .AppendLine("FAMILY : Constructor"),
                         dataExtFCValue = new List<dataExtFCValue>()
                     });
-                    message = $"{LogPrefix} Created template for function block: {sheet.Cell(row, fieldExtendedBlockData["Block Name"]).GetValue<string>()}";
-                    _logger.Information(message);
+                    _logger.Information($"{LogPrefix} Created template for function block: {sheet.Cell(row, fieldExtendedBlockData["Block Name"]).GetValue<string>()}");
                 }
             }, "Added all support FCs");
         }
-
         /// <summary>
         /// Adds support block data to the PLC structure from the extended data worksheet.
         /// </summary>
@@ -677,12 +641,10 @@ namespace seConfSW
                         isType = sheet.Cell(row, fieldExtendedSupportDB["Types"]).GetValue<string>().ToLower() == "yes",
                         isRetain = false
                     });
-                    message = $"{LogPrefix} Created support BD in DB: {sheet.Cell(row, fieldExtendedSupportDB["Block Name"]).GetValue<string>()}";
-                    _logger.Information(message);
+                    _logger.Information($"{LogPrefix} Created support BD in DB: {sheet.Cell(row, fieldExtendedSupportDB["Block Name"]).GetValue<string>()}");
                 }
             }, "Added all support BD");
         }
-
         /// <summary>
         /// Adds user constants to the PLC structure from the extended data worksheet.
         /// </summary>
@@ -700,12 +662,10 @@ namespace seConfSW
                         type = sheet.Cell(row, fieldExtendedUserConstant["Block Type"]).GetValue<string>(),
                         value = sheet.Cell(row, fieldExtendedUserConstant["Value"]).GetValue<string>()
                     });
-                    message = $"{LogPrefix} Created user constant: {sheet.Cell(row, fieldExtendedUserConstant["Block Name"]).GetValue<string>()}";
-                    _logger.Information(message);
+                    _logger.Information($"{LogPrefix} Created user constant: {sheet.Cell(row, fieldExtendedUserConstant["Block Name"]).GetValue<string>()}");
                 }
             }, "Added all support user constants");
         }
-
         /// <summary>
         /// Adds extended function values and builds function code in the PLC structure.
         /// </summary>
@@ -743,12 +703,10 @@ namespace seConfSW
                     AppendVariableSection(FC.code, FC.dataExtFCValue, "C", "VAR_CONSTANT");
 
                     FC.code.AppendLine("BEGIN"); // Mark the start of the function body
-                    message = $"{LogPrefix} Extended values for function: {FC.name}";
-                    _logger.Information(message);
+                    _logger.Information($"{LogPrefix} Extended values for function: {FC.name}");
                 }
             }
         }
-
         /// <summary>
         /// Processes a block of data from a worksheet and applies an action to each row.
         /// </summary>
@@ -772,14 +730,11 @@ namespace seConfSW
                 }
                 catch (Exception ex)
                 {
-                    message = $"{LogPrefix} Error processing row {r} in block {blockType}: {ex.Message}";
-                    _logger.Warning(ex, message);
+                    _logger.Error($"{LogPrefix} Error processing row {r} in block {blockType}: {ex.Message}");
                 }
             }
-            message = $"{LogPrefix} {successMessage} for equipment type: {sheet.Name}";
-            _logger.Information(message);
+            _logger.Debug($"{LogPrefix} {successMessage} for equipment type: {sheet.Name}");
         }
-
         /// <summary>
         /// Retrieves the range (start row and scope) of a block in a worksheet.
         /// </summary>
@@ -799,8 +754,7 @@ namespace seConfSW
             string numValue = sheet.Cell(row, startCol).GetValue<string>();
             if (!int.TryParse(numValue, out numRowBlock))
             {
-                message = $"{LogPrefix} Failed to parse numRowBlock at ({row}, {startCol}) for {blockType}: {numValue}";
-                _logger.Warning(message);
+                _logger.Warning($"{LogPrefix} Failed to parse numRowBlock at ({row}, {startCol}) for {blockType}: {numValue}");
                 return false;
             }
 
@@ -808,14 +762,12 @@ namespace seConfSW
             string scopeValue = sheet.Cell(row, startCol + 1).GetValue<string>();
             if (!int.TryParse(scopeValue, out scopeRowBlock))
             {
-                message = $"{LogPrefix} Failed to parse scopeRowBlock at ({row}, {startCol + 1}) for {blockType}: {scopeValue}";
-                _logger.Warning(message);
+                _logger.Warning($"{LogPrefix} Failed to parse scopeRowBlock at ({row}, {startCol + 1}) for {blockType}: {scopeValue}");
                 return false;
             }
 
             return true;
         }
-
         /// <summary>
         /// Appends a section of variable declarations to a function's code.
         /// </summary>

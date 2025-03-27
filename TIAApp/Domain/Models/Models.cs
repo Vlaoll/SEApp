@@ -119,7 +119,7 @@ namespace seConfSW.Domain.Models
         public string name { get; set; }
         public string table { get; set; }
         public StringBuilder code { get; set; } = new StringBuilder();
-        public string path { get; set; }
+        public string fileName { get; set; }
         public int ID { get; set; }
     }
 

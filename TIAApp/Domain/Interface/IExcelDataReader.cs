@@ -1,6 +1,7 @@
 ﻿// Ignore Spelling: Conf
 
 using seConfSW.Domain.Models;
+using System;
 using System.Collections.Generic;
 
 namespace seConfSW
@@ -9,12 +10,7 @@ namespace seConfSW
     /// Defines the contract for reading and processing Excel data related to PLC configurations.
     /// </summary>
     public interface IExcelDataReader
-    {
-        /// <summary>
-        /// Gets the last message generated during Excel processing, such as success or error details.
-        /// </summary>
-        string Message { get; }
-
+    {        
         /// <summary>
         /// Gets the list of PLC data structures populated from Excel.
         /// </summary>
@@ -56,5 +52,10 @@ namespace seConfSW
         /// <param name="sheetBlockDataName">The name of the worksheet containing extended data. Defaults to "PLCData".</param>
         /// <returns>True if the data is successfully processed, false otherwise.</returns>
         bool ReadExcelExtendedData(string sheetBlockDataName = "PLCData");
+
+        /// <summary>
+        /// Event raised when a progress message is generated during Excel processing.
+        /// </summary>
+        event EventHandler<string> MessageUpdated;
     }
 }

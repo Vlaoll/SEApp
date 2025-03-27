@@ -8,58 +8,54 @@
         xmlns:vm="clr-namespace:seConfSW.Presentation.ViewModels"
         mc:Ignorable="d" 
         Title="{Binding Title}" 
-        Height="450" Width="800">
+        Height="550" Width="800">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
     <Grid>
         <StackPanel Orientation="Vertical"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
-            <Button Content="Check permissions" 
-                    Command="{Binding CheckPermissionCommand}" 
-                    IsEnabled="{Binding CanCheckPermission}" 
+            <Button Content="Create License" 
+                    Command="{Binding CreateLicenseCommand}" 
                     HorizontalAlignment="Left" 
                     Height="28" 
-                    Margin="0,0,0,5" />
+                    Margin="0,0,0,5"  
+                    Visibility="{Binding isCreateLicenseVisible, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                    Width="165"/>
             <Button Content="Read Excel" 
                     Command="{Binding ReadExcelCommand}" 
-                    IsEnabled="{Binding CanReadExcel}" 
                     HorizontalAlignment="Left" 
                     Height="28" 
-                    Margin="0,0,0,5" />
+                    Margin="0,0,0,5" Width="166" />
             <Button Content="Connect to opened TIA Project" 
                     Command="{Binding ConnectToOpenedCommand}" 
-                    IsEnabled="{Binding CanConnectToOpened}" 
                     HorizontalAlignment="Left" 
                     Height="28" 
                     Margin="0,0,0,5" />
             <Button Content="Open exist TIA project" 
                     Command="{Binding OpenTiaCommand}" 
-                    IsEnabled="{Binding CanOpenTia}" 
                     HorizontalAlignment="Left" 
                     Height="28" 
-                    Margin="0,0,0,5" />
+                    Margin="0,0,0,5" Width="167" />
             <Button Content="Select TIA Library" 
                     Command="{Binding SelectLibraryCommand}" 
-                    IsEnabled="{Binding CanSelectLibrary}" 
                     HorizontalAlignment="Left" 
                     Height="28" 
-                    Margin="0,0,0,5" />
+                    Margin="0,0,0,5" Width="167" />
             <Button Content="Execute" 
                     Command="{Binding ExecuteCommand}" 
-                    IsEnabled="{Binding CanExecute}" 
                     HorizontalAlignment="Left" 
                     Height="28" 
-                    Margin="0,0,0,5" />
+                    Margin="0,0,0,5" Width="167" />
             <CheckBox Content="Create new tags" 
                       IsChecked="{Binding CreateTags}" 
                       Margin="0,0,0,5" />
-            <CheckBox Content="Cteate new instance DBs" 
+            <CheckBox Content="Create new instance DBs" 
                       IsChecked="{Binding CreateInsDB}" 
                       Margin="0,0,0,5" />
-            <CheckBox Content="Create/Update fuunctions" 
+            <CheckBox Content="Create/Update functions" 
                       IsChecked="{Binding CreateFC}" 
-                      Margin="0,0,0,5" />
-            <CheckBox Content="Visible TIA Portal" 
-                      IsChecked="{Binding VisibleTia}" 
                       Margin="0,0,0,5" />
             <CheckBox Content="Close project after complete action" 
                       IsChecked="{Binding CloseProject}" 
@@ -69,14 +65,19 @@
                       Margin="0,0,0,5" />
             <CheckBox Content="Save project after complete action" 
                       IsChecked="{Binding SaveProject}" 
-                      Margin="0,0,0,5" />
-            <TextBox Text="{Binding Message, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                      Margin="0,0,0,5" />            
+            <ListBox ItemsSource="{Binding LogMessages}" 
                      HorizontalAlignment="Left" 
-                     TextWrapping="Wrap" 
-                     VerticalAlignment="Top" 
                      Width="470" 
-                     Height="22" 
-                     IsReadOnly="True" />
+                     Height="100" 
+                     ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </StackPanel>
     </Grid>
 </Window>
