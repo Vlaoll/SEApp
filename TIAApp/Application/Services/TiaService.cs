@@ -25,11 +25,13 @@ namespace seConfSW.Services
         /// </summary>
         private const string LogPrefix = "[TIA]";
         #endregion
-        #region Properties
+        #region Events
+
         /// <summary>
-        /// Event that is raised when a message needs to be updated in the UI
+        /// Event that is triggered when a message needs to be updated
         /// </summary>
         public event EventHandler<string> MessageUpdated;
+
         #endregion
         #region Private Fields
         private readonly IConfigurationService _configuration;
@@ -221,14 +223,20 @@ namespace seConfSW.Services
         {
             try
             {
-                _logger.Information("Disposing TIA resources");
+                _logger.Information($"{LogPrefix} Disposing TIA resources");
                 _projectManager.Dispose();
-                _logger.Information("TIA resources disposed");
+                _logger.Information($"{LogPrefix} TIA resources disposed");
             }
             catch (Exception ex)
             {
-                _logger.Error($"Failed to dispose TIA resources: {ex.Message}");
+                _logger.Error($"{LogPrefix} Failed to dispose TIA resources: {ex.Message}");
             }
+        }
+        #endregion
+        #region Private Helper Methods
+        protected virtual void OnMessageUpdated(string message)
+        {
+            MessageUpdated?.Invoke(this, message);
         }
         #endregion
     }

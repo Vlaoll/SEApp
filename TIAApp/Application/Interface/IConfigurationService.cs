@@ -11,11 +11,7 @@ namespace seConfSW.Services
         /// Gets the Siemens Registry Path from the configuration.
         /// </summary>
         string SiemensRegistryPath { get; }
-
-        /// <summary>
-        /// Gets the Siemens API Path from the configuration.
-        /// </summary>
-        string SiemensApiPath { get; }
+       
 
         /// <summary>
         /// Gets the project file filter for the TIA Portal.

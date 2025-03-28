@@ -12,7 +12,7 @@ namespace seConfSW.Services
     public class Configuration : IConfigurationService
     {
         private readonly IConfiguration _configuration;
-
+        private string _version;
         /// <summary>
         /// Initializes a new instance of the <see cref="Configuration"/> class.
         /// </summary>
@@ -21,19 +21,18 @@ namespace seConfSW.Services
         public Configuration(IConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _version = _configuration["TiaPortal:RequiredVersion"];
         }
+        
+        /// <inheritdoc/>
+        public string SiemensRegistryPath => (_configuration["TiaPortal:SiemensRegistryPathKey"] ?? "SOFTWARE\\Siemens\\Automation\\Openness") + $"\\{_version}.0"; 
+       
 
         /// <inheritdoc/>
-        public string SiemensRegistryPath => _configuration["TiaPortal:SiemensRegistryPathKey"] ?? "SOFTWARE\\Siemens\\Automation\\Openness";
+        public string ProjectFilter => $"TIA Portal |*.ap{_version}";
 
         /// <inheritdoc/>
-        public string SiemensApiPath => _configuration["TiaPortal:SiemensApiPath"] ?? "C:\\Program Files\\Siemens\\Automation\\Portal V19\\PublicAPI\\V19\\";
-
-        /// <inheritdoc/>
-        public string ProjectFilter => _configuration["TiaPortal:Filter"] ?? "TIA Portal |*.ap20; *.ap19; *.ap18; *.ap17";
-
-        /// <inheritdoc/>
-        public string LibraryFilter => _configuration["TiaLibrary:Filter"] ?? "TIA Library |*.al20; *.al19; *.al18; *.al17";
+        public string LibraryFilter => $"TIA Library |*.al{_version}";
         
 
         /// <inheritdoc/>

@@ -12,6 +12,7 @@ using System.Windows.Input;
 using Serilog;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace seConfSW.Presentation.ViewModels
 {
@@ -247,10 +248,12 @@ namespace seConfSW.Presentation.ViewModels
             ExecuteCommand = new RelayCommand(Execute, () => State == ProjectState.LibrarySelected);
 
             var chekPermission = new PermitManager(_configuration, _logger);
+            chekPermission.MessageUpdated += OnServiceMessageUpdated;
             if (chekPermission.CheckLicense())
             {
                 State = ProjectState.PermissionsChecked;
             }
+            chekPermission.MessageUpdated -= OnServiceMessageUpdated;
         }
         #endregion
         #region Public Methods
@@ -259,12 +262,15 @@ namespace seConfSW.Presentation.ViewModels
         /// </summary>
         public void CloseWindows()
         {
-            LogAndReport("Closing application and disposing resources");
+            LogAndReport($"Closing application and disposing resources");
+            _excelService.MessageUpdated -= OnServiceMessageUpdated;
+            _tiaService.MessageUpdated -= OnServiceMessageUpdated;
+            
             _excelService.CloseExcelFile();
             _tiaService.DisposeTia();
         }
         #endregion
-        #region Private Helper Methods
+            #region Private Helper Methods
         private void OnServiceMessageUpdated(object sender, string message)
         {
             Application.Current.Dispatcher.InvokeAsync(() =>
@@ -281,7 +287,14 @@ namespace seConfSW.Presentation.ViewModels
         private void ExecuteCreateLicense()
         {
             var chekPermission = new PermitManager(_configuration, _logger);
+            chekPermission.MessageUpdated += OnServiceMessageUpdated;
             chekPermission.GenerateLicense();
+            State = ProjectState.Initial;
+            if (chekPermission.CheckLicense())
+            {
+                State = ProjectState.PermissionsChecked;
+            }
+            chekPermission.MessageUpdated -= OnServiceMessageUpdated;
         }
 
         private void ExecuteReadExcel()
@@ -294,7 +307,7 @@ namespace seConfSW.Presentation.ViewModels
             if (_excelService.CreateExcelDB())
             {
                 State = ProjectState.ExcelRead;
-                LogAndReport("Reading Excel file completed. Select needed action for TIA project");
+             LogAndReport("Reading Excel file completed. Select needed action for TIA project");
             }
         }
 

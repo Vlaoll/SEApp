@@ -70,6 +70,7 @@ namespace seConfSW.Services
             try
             {
                 _logger.Information($"{LogPrefix} Starting generation of Excel database");
+                OnMessageUpdated($"{LogPrefix} Starting generation of Excel database");
                 _logger.Information($"{LogPrefix} -------------------------------------------------------------------------------------");
 
                 if (string.IsNullOrEmpty(_excelPath))
@@ -85,9 +86,11 @@ namespace seConfSW.Services
                 _excelprj.OpenExcelFile(_excelPath, mainSheetName: mainSheetName);
 
                 _logger.Information($"{LogPrefix} Reading object data from Excel file");
+                OnMessageUpdated($"{LogPrefix} Reading object data from Excel file");
                 if (!_excelprj.ReadExcelObjectData("Block", 250))
                 {
                     _logger.Error($"{LogPrefix} Failed to read object data from Excel file due to incorrect settings");
+                    OnMessageUpdated($"{LogPrefix} Failed to read object data from Excel file due to incorrect settings");
                     return false;
                 }
 
@@ -95,12 +98,14 @@ namespace seConfSW.Services
                 if (!_excelprj.ReadExcelExtendedData())
                 {
                     _logger.Error($"{LogPrefix} Failed to read extended data from Excel file due to incorrect settings");
+                    OnMessageUpdated($"{LogPrefix} Failed to read extended data from Excel file due to incorrect settings");
                     return false;
                 }
 
                 _logger.Information($"{LogPrefix} Closing Excel file");
                 _excelprj.CloseExcelFile();
                 _logger.Information($"{LogPrefix} Successfully generated Excel database from {_excelPath}");
+                OnMessageUpdated($"{LogPrefix} Successfully generated Excel database from {_excelPath}");
                 _logger.Information($"{LogPrefix} -------------------------------------------------------------------------------------");
 
                 return true;
@@ -108,6 +113,7 @@ namespace seConfSW.Services
             catch (Exception ex)
             {
                 _logger.Error($"{LogPrefix} Failed to generate Excel database: {ex.Message}");
+                OnMessageUpdated($"{LogPrefix} Failed to generate Excel database");
                 return false;
             }
         }
@@ -135,8 +141,10 @@ namespace seConfSW.Services
 
         #endregion
         #region Private Helper Methods
-        // Currently no private helper methods exist in this class
-        // Future private methods should be placed in this region
+        protected virtual void OnMessageUpdated(string message)
+        {
+            MessageUpdated?.Invoke(this, message);
+        }
         #endregion
     }
 }

@@ -43,17 +43,18 @@ namespace seConfSW.Services
         /// Logger instance for recording operational events
         /// </summary>
         private readonly ILogger _logger;
-
         /// <summary>
         /// Configuration service providing settings and paths
         /// </summary>
         private readonly IConfigurationService _configuration;
-
         /// <summary>
         /// Service handling license data generation
         /// </summary>
         private readonly LicenseDataService _licenseDataService;
-
+        /// <summary>
+        /// Event that is raised when a message needs to be updated in the UI
+        /// </summary>
+        public event EventHandler<string> MessageUpdated;
         #endregion
         #region Constructor
 
@@ -82,6 +83,7 @@ namespace seConfSW.Services
             try
             {
                 _logger.Information($"{LogPrefix} Starting license validation checks");
+                OnMessageUpdated($"{LogPrefix} Starting license validation checks");
 
                 // Validate license file existence
                 string licenseFilePath = _configuration.LicenseFile;
@@ -90,6 +92,7 @@ namespace seConfSW.Services
                 if (!File.Exists(licenseFilePath))
                 {
                     _logger.Warning($"{LogPrefix} License file not found at {licenseFilePath}. Creating default license.");
+                    OnMessageUpdated($"{LogPrefix} License file not found at {licenseFilePath}. Creating default license.");
                     CreateDefaultLicenseJson();
                     return false;
                 }
@@ -105,6 +108,7 @@ namespace seConfSW.Services
                 if (licenseLines.Length < 4)
                 {
                     _logger.Warning($"{LogPrefix} Invalid license format. Expected 4 lines, got {licenseLines.Length}");
+                    OnMessageUpdated($"{LogPrefix} License file not found at {licenseFilePath}. Creating default license.");
                     return false;
                 }
 
@@ -122,6 +126,7 @@ namespace seConfSW.Services
                 if (string.IsNullOrEmpty(currentMac) || currentMac != licensedMac)
                 {
                     _logger.Warning($"{LogPrefix} MAC address mismatch. Licensed: {licensedMac}, Current: {currentMac}");
+                    OnMessageUpdated($"{LogPrefix} MAC address mismatch. Licensed: {licensedMac}, Current: {currentMac}");
                     return false;
                 }
 
@@ -129,6 +134,7 @@ namespace seConfSW.Services
                 if (string.IsNullOrEmpty(currentCpu) || currentCpu != licensedCpu)
                 {
                     _logger.Warning($"{LogPrefix} CPU ID mismatch. Licensed: {licensedCpu}, Current: {currentCpu}");
+                    OnMessageUpdated($"{LogPrefix} CPU ID mismatch. Licensed: {licensedCpu}, Current: {currentCpu}");
                     return false;
                 }
 
@@ -137,12 +143,14 @@ namespace seConfSW.Services
                     CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime expiryDate))
                 {
                     _logger.Warning($"{LogPrefix} Invalid date format: {expiryDateStr}");
+                    OnMessageUpdated($"{LogPrefix} Invalid date format: {expiryDateStr}");
                     return false;
                 }
 
                 if (expiryDate < DateTime.Now)
                 {
                     _logger.Warning($"{LogPrefix} License expired on {expiryDate:yyyy-MM-dd}");
+                    OnMessageUpdated($"{LogPrefix} License expired on {expiryDate:yyyy-MM-dd}");
                     return false;
                 }
 
@@ -153,6 +161,7 @@ namespace seConfSW.Services
                 if (computedSignature != signature)
                 {
                     _logger.Warning($"{LogPrefix} Invalid license signature");
+                    OnMessageUpdated($"{LogPrefix} Invalid license signature");
                     return false;
                 }
 
@@ -161,6 +170,7 @@ namespace seConfSW.Services
                 if (!principal.IsInRole(TiaGroupName))
                 {
                     _logger.Warning($"{LogPrefix} User must be added to 'Siemens TIA Openness' group");
+                    OnMessageUpdated($"{LogPrefix} User must be added to 'Siemens TIA Openness' group");
                     return false;
                 }
 
@@ -169,10 +179,12 @@ namespace seConfSW.Services
                 if (filePathReg == null)
                 {
                     _logger.Warning($"{LogPrefix} TIA Portal Openness is missing or incorrect version installed");
+                    OnMessageUpdated($"{LogPrefix} TIA Portal Openness is missing or incorrect version installed");
                     return false;
                 }
 
                 _logger.Information($"{LogPrefix} All permissions checked successfully. License validation successful");
+                OnMessageUpdated($"{LogPrefix} All permissions checked successfully. License validation successful");
                 return true;
             }
             catch (Exception ex)
@@ -507,6 +519,11 @@ namespace seConfSW.Services
                 _logger.Error(ex, $"{LogPrefix} CPU ID retrieval failed: {ex.Message}");
                 return string.Empty;
             }
+        }
+
+        protected virtual void OnMessageUpdated(string message)
+        {
+            MessageUpdated?.Invoke(this, message);
         }
 
         #endregion

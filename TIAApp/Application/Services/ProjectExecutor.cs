@@ -79,45 +79,45 @@ namespace seConfSW.Presentation.ViewModels
         /// <returns>True if project was successfully opened and connected</returns>
         public bool ExecuteOpenTiaProject(bool isVisible)
         {
-            LogAndReport("{LogPrefix} Checking if TIA Portal is available", _logger.Information);
+            LogAndReport($"{LogPrefix} Checking if TIA Portal is available", _logger.Information);
             if (!(_projectManager.ConnectToTiaPortal() == ConnectionStatus.NoInstanceFound))
             {
-                LogAndReport("TIA Portal must be closed before opening a new project", _logger.Warning);
+                LogAndReport($"{LogPrefix}TIA Portal must be closed before opening a new project", _logger.Warning);
                 return false;
             }
 
             _projectPath = string.Empty;
-            LogAndReport("Searching for TIA project", _logger.Information);
+            LogAndReport($"{LogPrefix}Searching for TIA project", _logger.Information);
             _projectPath = _projectManager.SearchProject(_configuration.ProjectFilter);
 
             if (string.IsNullOrEmpty(_projectPath))
             {
-                LogAndReport($"TIA project not selected or invalid path: {_projectPath}", _logger.Warning);
+                LogAndReport($"{LogPrefix}TIA project not selected or invalid path: {_projectPath}", _logger.Warning);
                 return false;
             }
 
             if (!_projectManager.StartTIA(isVisible))
             {
-                LogAndReport("TIA Portal didn't start.", _logger.Warning);
+                LogAndReport($"{LogPrefix}TIA Portal didn't start.", _logger.Warning);
                 return false;
             }
 
             if (!(_projectManager.OpenProject(_projectManager.WorkTiaPortal, _projectPath) is Project))
             {
-                LogAndReport($"TIA project didn't open at {_projectPath}.", _logger.Warning);
+                LogAndReport($"{LogPrefix}TIA project didn't open at {_projectPath}.", _logger.Warning);
                 return false;
             }
 
-            LogAndReport($"Connecting to TIA project at {_projectPath}", _logger.Information);
+            LogAndReport($"{LogPrefix}Connecting to TIA project at {_projectPath}", _logger.Information);
 
             if (_projectManager.ConnectToTiaPortal() == ConnectionStatus.ConnectedSuccessfully)
             {
-                LogAndReport($"TIA project opened and connected at {_projectPath}", _logger.Information);
+                LogAndReport($"{LogPrefix}TIA project opened and connected at {_projectPath}", _logger.Information);
                 _libraryManager.WorkTiaPortal = _projectManager.WorkTiaPortal;
                 return true;
             }
 
-            LogAndReport($"TIA project didn't connect at {_projectPath}", _logger.Warning);
+            LogAndReport($"{LogPrefix}TIA project didn't connect at {_projectPath}", _logger.Warning);
             return false;
         }
 
@@ -128,10 +128,10 @@ namespace seConfSW.Presentation.ViewModels
         /// <returns>True if successfully connected to the opened project</returns>
         public bool ExecuteToOpenedTiaProject(bool isVisible)
         {
-            LogAndReport("Attempting to connect to an already opened TIA project", _logger.Information);
+            LogAndReport($"{LogPrefix}Attempting to connect to an already opened TIA project", _logger.Information);
             bool iConnected = _projectManager.ConnectToTiaPortal() == ConnectionStatus.ConnectedSuccessfully;
             _libraryManager.WorkTiaPortal = iConnected ? _projectManager.WorkTiaPortal : null;
-            LogAndReport(iConnected ? "Successfully connected to opened TIA project" : "Failed to connect to TIA project", _logger.Information);
+            LogAndReport(iConnected ? $"{LogPrefix}Successfully connected to opened TIA project" : $"{LogPrefix}Failed to connect to TIA project", _logger.Information);
             return iConnected;
         }
 
@@ -141,17 +141,17 @@ namespace seConfSW.Presentation.ViewModels
         /// <returns>True if library was successfully selected</returns>
         public bool ExecuteSelectLibrary()
         {
-            LogAndReport("Searching for library", _logger.Information);
+            LogAndReport($"{LogPrefix}Searching for library", _logger.Information);
             _projectLibPath = string.Empty;
             _projectLibPath = _libraryManager.SearchLibrary(_configuration.LibraryFilter);
 
             if (!string.IsNullOrEmpty(_projectLibPath))
             {
-                LogAndReport($"Library selected at {_projectLibPath}", _logger.Information);
+                LogAndReport($"{LogPrefix}Library selected at {_projectLibPath}", _logger.Information);
                 return true;
             }
 
-            LogAndReport("Invalid library path", _logger.Warning);
+            LogAndReport($"{LogPrefix}Invalid library path", _logger.Warning);
             return false;
         }
 
@@ -174,7 +174,7 @@ namespace seConfSW.Presentation.ViewModels
         {
             // Record and log start time for performance tracking
             DateTime startTime = DateTime.Now;
-            LogAndReport($"Starting project execution at {startTime}", updateMessage);
+            LogAndReport($"{LogPrefix}Starting project execution at {startTime}", updateMessage);
 
             // Ensure all required working directories exist before processing
             // These folders are essential for export, source files, and templates
@@ -203,7 +203,7 @@ namespace seConfSW.Presentation.ViewModels
 
             // Record and log completion time with duration
             DateTime finishTime = DateTime.Now;
-            LogAndReport($"Project execution completed at {finishTime} (Duration: {finishTime - startTime})", updateMessage);
+            LogAndReport($"{LogPrefix}Project execution completed at {finishTime} (Duration: {finishTime - startTime})", updateMessage);
         }
 
         /// <summary>
@@ -238,7 +238,7 @@ namespace seConfSW.Presentation.ViewModels
         private void ProcessPlc(Domain.Models.dataPLC plc, List<Domain.Models.dataPLC> excelData, Action<string> updateMessage, 
             bool createTags, bool createInsDB, bool createFC, bool closeProject, bool saveProject, bool compileProject)
         {
-            LogAndReport($"Starting to process PLC: {plc.namePLC}", updateMessage);
+            LogAndReport($"{LogPrefix}Starting to process PLC: {plc.namePLC}", updateMessage);
 
             var plcSoftware = GetPLC(plc.namePLC);
 
@@ -265,7 +265,7 @@ namespace seConfSW.Presentation.ViewModels
                 _tiaService.EditFCFromExcelCallAllBlocks(plcSoftware, plc, excelData, closeProject, saveProject, compileProject);
             }               
 
-            LogAndReport($"Finished processing PLC: {plc.namePLC}", updateMessage);
+            LogAndReport($"{LogPrefix}Finished processing PLC: {plc.namePLC}", updateMessage);
         }
 
         /// <summary>
@@ -274,10 +274,9 @@ namespace seConfSW.Presentation.ViewModels
         /// <param name="message">Message to log and report</param>
         /// <param name="updateMessage">Callback for status updates</param>
         private void LogAndReport(string message, Action<string> updateMessage)
-        {
-            string fullMessage = $"{LogPrefix} {message}";
-            updateMessage(fullMessage);
-            _logger.Information(fullMessage);
+        {           
+            updateMessage?.Invoke(message);
+            _logger.Information(message);
         }
         #endregion
     }
